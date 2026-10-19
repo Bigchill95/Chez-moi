@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chez Toi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#07050d; --bg2:#120a1f; --card:#ffffff0f; --card2:#ffffff08; --border:#9146ff55;
+    --gold:#9146ff; --gold2:#b982ff; --text:#f5f2ea; --text2:#bfc3ccaa; --text3:#8a8f9c; --red-alert:#e0263f;
+    --twitch-purple:#9146FF;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  body{
+    font-family:'Inter',-apple-system,Segoe UI,sans-serif;
+    /* Dégradé noir et violet */
+    background: radial-gradient(circle at 50% 0%, #3c1361 0%, #170826 45%, var(--bg) 90%);
+    color:var(--text);
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+    display:flex; justify-content:center;
+  }
+  h1,h2{font-family:'Playfair Display',serif;}
+  #phone{ width:100%; max-width:410px; min-height:100vh; display:flex; flex-direction:column; position:relative; overflow:hidden; }
+  .screen{ display:none; flex-direction:column; flex:1; padding:26px 22px; animation:fade .35s ease; overflow-y:auto; max-height:100vh; }
+  .screen.active{ display:flex; }
+  @keyframes fade{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:none;} }
+
+  /* EFFET BOUTON SERPENT ANIMÉ */
+  .btn, .btn-gold, .btn.ghost, .btn.dark {
+    position: relative;
+    border: none !important;
+    border-radius: 14px;
+    padding: 15px;
+    font-size: 15px;
+    font-weight: 700;
+    width: 100%;
+    margin-top: 10px;
+    cursor: pointer;
+    overflow: hidden;
+    background: #140b24;
+    color: #fff;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  }
+
+  /* Serpent rotatif lumineux */
+  .btn::before, .btn-gold::before, .btn.ghost::before, .btn.dark::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: conic-gradient(transparent, transparent, transparent, #9146ff, #d8b4ff);
+    animation: snakeRotate 3s linear infinite;
+    z-index: -2;
+  }
+
+  /* Masque intérieur du bouton */
+  .btn::after, .btn-gold::after, .btn.ghost::after, .btn.dark::after {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    background: #120a1f;
+    border-radius: 12px;
+    z-index: -1;
+    transition: background 0.2s;
+  }
+
+  /* Variations de couleurs du bouton */
+  .btn::after {
+    background: linear-gradient(135deg, #2a114d, #140b24);
+  }
+  .btn-gold::before {
+    background: conic-gradient(transparent, transparent, transparent, #ff3b5c, #ff94a6);
+  }
+  .btn.ghost::after {
+    background: #0d0717;
+  }
+  .btn:active::after, .btn-gold:active::after, .btn.ghost:active::after, .btn.dark:active::after {
+    background: #281248;
+  }
+
+  @keyframes snakeRotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* SPLASH SCREEN AVEC FOND VIOLET/NOIR */
+  #splash{ 
+    position:relative; align-items:center; justify-content:center; text-align:center; 
+    background: radial-gradient(circle at 50% 0%, #3c1361 0%, #170826 45%, var(--bg) 90%); 
+    overflow:hidden; 
+  }
+  .twitch-splash-container{ display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:2; }
+  .twitch-logo-wrapper{
+    position:relative; width:90px; height:90px; display:flex; align-items:center; justify-content:center;
+    animation:twitchPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  }
+  .twitch-logo-icon{
+    font-size:54px; filter:drop-shadow(0 0 20px rgba(145, 70, 255, 0.8));
+    animation:twitchPulse 2s infinite ease-in-out;
+  }
+  .twitch-glitch-bg{
+    position:absolute; inset:-10px; background:radial-gradient(circle, rgba(145,70,255,0.4) 0%, transparent 70%);
+    border-radius:50%; animation:pulseGlow 1.8s infinite alternate;
+  }
+  .twitch-title{
+    margin-top:20px; font-family:'Inter', sans-serif; font-size:26px; font-weight:900;
+    letter-spacing:1px; color:#fff; text-transform:uppercase; opacity:0;
+    animation:twitchTextFade 0.6s ease forwards 0.5s;
+  }
+  .twitch-subtitle{
+    font-size:12px; font-weight:600; color:var(--gold2); letter-spacing:3px;
+    text-transform:uppercase; margin-top:6px; opacity:0;
+    animation:twitchTextFade 0.6s ease forwards 0.8s;
+  }
+  .twitch-loader-bar{
+    width:140px; height:4px; background:rgba(255,255,255,0.1); border-radius:10px;
+    margin-top:30px; overflow:hidden; position:relative; opacity:0;
+    animation:twitchTextFade 0.4s ease forwards 1s;
+  }
+  .twitch-loader-progress{
+    position:absolute; top:0; left:0; height:100%; width:0%;
+    background:linear-gradient(90deg, var(--twitch-purple), var(--gold2));
+    border-radius:10px; animation:twitchLoad 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards 1.2s;
+  }
+
+  @keyframes twitchPop{ 0%{ transform:scale(0) rotate(-15deg); opacity:0; } 100%{ transform:scale(1) rotate(0deg); opacity:1; } }
+  @keyframes twitchPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.08); } }
+  @keyframes pulseGlow{ 0%{ opacity:0.3; transform:scale(0.8); } 100%{ opacity:0.9; transform:scale(1.2); } }
+  @keyframes twitchTextFade{ to{ opacity:1; } }
+  @keyframes twitchLoad{ 0%{ width:0%; } 100%{ width:100%; } }
+
+  h1{font-size:24px; margin:0 0 4px; letter-spacing:.3px;}
+  h2{font-size:17px; margin:0 0 12px;}
+  p.sub{color:var(--text2); font-size:13px; margin:0 0 18px;}
+  
+  .card{ background:var(--card); border:1px solid var(--border); border-radius:16px; padding:18px; margin-bottom:14px; backdrop-filter:blur(6px); }
+  .row{ display:flex; align-items:center; gap:10px; }
+  .row.between{ justify-content:space-between; }
+  input{
+    width:100%; background:var(--card2); border:2px solid var(--border); color:var(--text);
+    padding:14px; border-radius:12px; margin-bottom:12px; font-size:14px; font-family:inherit;
+    transition: border-color 0.2s;
+  }
+  input:focus{ outline:none; border-color:var(--twitch-purple); }
+  input::placeholder{color:var(--text3);}
+  .error-text{ color:#ff6b6b; font-size:12px; margin:-8px 0 10px; display:none; }
+  .error-text.show{ display:block; }
+  input.error{ border-color:#ff6b6b; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .device{ background:var(--card2); border:2px solid var(--border); border-radius:14px; padding:14px 10px; text-align:center; cursor:pointer; transition:.15s; }
+  .device.on{ background:#9146ff33; border-color:var(--twitch-purple); box-shadow:0 0 12px rgba(145,70,255,0.4); }
+  .device .emoji{ font-size:24px; }
+  .device .name{ font-weight:600; margin-top:6px; font-size:11.5px; line-height:1.2; }
+  .device .state{ font-size:10px; color:var(--text3); margin-top:2px; }
+  .device.on .state{ color:var(--gold2); }
+  .switch{ width:44px; height:26px; border-radius:20px; background:var(--card2); position:relative; cursor:pointer; border:2px solid var(--border); flex-shrink:0; }
+  .switch.on{ background:var(--twitch-purple); border-color:var(--gold2); }
+  .switch .knob{ width:18px; height:18px; border-radius:50%; background:#fff; position:absolute; top:2px; left:2px; transition:.2s; }
+  .switch.on .knob{ left:20px; background:#fff; }
+  .topbar{ display:flex; align-items:center; gap:12px; margin-bottom:22px; }
+  .back{ cursor:pointer; font-size:20px; color:var(--gold2); }
+  .center{ align-items:center; justify-content:center; text-align:center; }
+  .crest{ font-size:15px; letter-spacing:4px; color:var(--gold2); text-transform:uppercase; margin-bottom:6px; }
+  .photo-upload{
+    width:100%; height:140px; border-radius:14px; border:2px dashed var(--border);
+    background:var(--card2); display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:6px; cursor:pointer; overflow:hidden; margin-bottom:12px; color:var(--text3); font-size:13px;
+  }
+  .photo-upload img{ width:100%; height:100%; object-fit:cover; }
+  .map{ height:170px; border-radius:14px; background:
+      repeating-linear-gradient(0deg, transparent, transparent 23px, #ffffff08 24px),
+      repeating-linear-gradient(90deg, transparent, transparent 23px, #ffffff08 24px), var(--card2);
+    display:flex; align-items:center; justify-content:center; flex-direction:column; gap:6px; margin-bottom:18px; border:2px solid var(--border); }
+  .bigpanel{ background:var(--card2); border:2px solid var(--border); border-radius:18px; padding:28px 18px; text-align:center; cursor:pointer; margin:14px 0; transition: border-color 0.2s; }
+  .bigpanel:hover{ border-color:var(--twitch-purple); }
+  .housePlan{ position:relative; background:#e7dbc2; border:6px solid #2b2f38; border-radius:4px; height:340px; margin:0 0 6px; }
+  .room{ position:absolute; border:2px solid #2b2f38; box-sizing:border-box; }
+  .room span{ position:absolute; right:5px; bottom:3px; font-size:10px; font-weight:700; color:#2b2f38; letter-spacing:.3px; }
+  .pin{ width:16px;height:16px;border-radius:50%;background:var(--twitch-purple);border:2px solid #fff; box-shadow:0 0 0 8px rgba(145, 70, 255, 0.3); }
+  .nav-home{ display:flex; flex-direction:column; gap:10px; margin-top:16px; }
+  .link{ text-align:center; color:var(--text2); font-size:13px; margin-top:14px; cursor:pointer; }
+  .link b{color:var(--gold2); font-weight:600;}
+
+  .overlay{ position:fixed; inset:0; background:#000c; display:none; align-items:flex-end; justify-content:center; z-index:20; }
+  .overlay.show{ display:flex; }
+  .sheet{ background:#120a1f; width:100%; max-width:410px; max-height:80vh; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; touch-action:pan-y; border-radius:22px 22px 0 0; padding:22px; border:2px solid var(--border); border-bottom:none; }
+
+  #policeCallScreen{ display:none; position:absolute; inset:0; background:#000; color:#fff; z-index:60; flex-direction:column; align-items:center; justify-content:space-between; padding:60px 22px 40px; text-align:center; }
+  #policeCallScreen.show{ display:flex; }
+  #policeCallScreen .sub{ color:#aab; }
+  .pc-top{ display:flex; flex-direction:column; align-items:center; margin-top:20px; }
+  .pc-avatar{ width:88px; height:88px; border-radius:50%; background:#2a2f3a; display:flex; align-items:center; justify-content:center; font-size:40px; }
+  .pc-hangup{ width:64px; height:64px; border-radius:50%; background:#ff3b30; border:none; color:#fff; font-size:26px; transform:rotate(135deg); cursor:pointer; }
+
+  .floorplan{ position:relative; background:#e7dbc2; border:6px solid #2b2f38; border-radius:4px; height:210px; margin:10px 0 18px; }
+  .fp-bed{ position:absolute; left:8%; top:14%; width:32%; height:72%; background:#d8cdb8; border:3px solid #2b2f38; border-radius:3px; }
+  .fp-icon{ position:absolute; top:12%; left:12%; width:42px; height:42px; border-radius:50%; background:#00000050; border:2px solid #ffffff33; display:flex; align-items:center; justify-content:center; font-size:19px; cursor:pointer; transition:.2s; }
+  .fp-icon.on{ background:var(--twitch-purple); box-shadow:0 0 14px 4px rgba(145,70,255,0.6); border-color:var(--gold2); }
+  .acc{ display:flex; align-items:center; gap:12px; padding:12px 4px; border-radius:12px; cursor:pointer; }
+  .acc:active{ background:#ffffff08; }
+  .avatar{ width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,var(--gold2),var(--gold)); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; flex-shrink:0; }
+  .acc .mail{ font-size:13px; color:var(--text2); }
+
+  .scan-dot{ width:10px;height:10px;border-radius:50%; background:var(--twitch-purple); animation:pulse 1s infinite; display:inline-block; }
+  @keyframes pulse{ 0%,100%{opacity:.3;} 50%{opacity:1;} }
+</style>
+</head>
+<body>
+<div id="phone">
+
+  <div class="screen active center" id="splash">
+    <div class="twitch-splash-container">
+      <div class="twitch-logo-wrapper">
+        <div class="twitch-glitch-bg"></div>
+        <div class="twitch-logo-icon">🏡</div>
+      </div>
+      <div class="twitch-title">Chez Toi</div>
+      <div class="twitch-subtitle">Smart Home System</div>
+      <div class="twitch-loader-bar">
+        <div class="twitch-loader-progress"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" id="login">
+    <button class="btn ghost" style="margin-bottom:14px;" onclick="ouvrirLangues()">🌐 <span id="langBtnTxt2">Langue</span></button>
+    <div class="center" style="margin-bottom:24px;">
+      <div class="crest">Chez Toi</div>
+      <div style="font-size:40px;">🏡</div>
+      <h1 id="loginTitle">Connexion</h1>
+      <p class="sub" id="loginSubtitle" style="margin-top:6px;">Votre maison, entre de bonnes mains</p>
+    </div>
+    <input id="loginEmail" placeholder="Adresse e-mail (Gmail, Yahoo...)">
+    <div class="error-text" id="loginEmailErr">Champ obligatoire</div>
+    <input id="loginPassword" type="password" placeholder="Mot de passe">
+    <div class="error-text" id="loginPasswordErr">Champ obligatoire</div>
+    <button class="btn" id="connectBtn" onclick="connexion()">Se connecter</button>
+    <p class="sub" id="orText" style="text-align:center; margin:16px 0 4px;">ou</p>
+    <input id="loginPhone" placeholder="Numéro de téléphone">
+    <div class="error-text" id="loginPhoneErr">Champ obligatoire</div>
+    <button class="btn dark" id="continueBtn" onclick="continuerNumero()">Continuer avec ce numéro</button>
+    <div class="link" onclick="go('signup')" id="noAccountLine">Pas encore de compte ? <b>Créer un compte</b></div>
+    <div class="link" onclick="go('reconnect')" id="reconnectLine">Se reconnecter à un ancien compte</div>
+  </div>
+
+  <div class="screen" id="reconnect">
+    <div class="topbar"><span class="back" onclick="go('login')">←</span><h1 style="margin:0;font-size:20px">Reconnexion</h1></div>
+    <input id="reconnectId" placeholder="E-mail ou numéro de téléphone">
+    <div class="error-text" id="reconnectIdErr">Champ obligatoire</div>
+    <input id="reconnectPass" type="password" placeholder="Ancien mot de passe">
+    <div class="error-text" id="reconnectPassErr">Champ obligatoire</div>
+    <button class="btn" onclick="reconnexionAncien()">Se reconnecter</button>
+  </div>
+
+  <div class="screen" id="signup">
+    <div class="topbar"><span class="back" onclick="go('login')">←</span><h1 style="margin:0;font-size:20px">Créer un compte</h1></div>
+    <input id="signupNom" placeholder="Nom">
+    <input id="signupPrenom" placeholder="Prénom">
+    <input id="signupTel" placeholder="Numéro de téléphone">
+    <div class="error-text" id="signupTelErr">Champ obligatoire</div>
+    <input placeholder="Adresse / domicile">
+    <input id="signupPass" type="password" placeholder="Mot de passe">
+    <div class="error-text" id="signupPassErr">Champ obligatoire</div>
+    <input id="signupPass2" type="password" placeholder="Confirmer le mot de passe">
+    <div class="error-text" id="signupPass2Err">Les mots de passe ne correspondent pas</div>
+    <label class="photo-upload" id="houseUploadLabel">
+      <span>📷 Photo du domicile (optionnel)</span>
+      <input type="file" accept="image/*" style="display:none" onchange="previewPhoto(event,'houseUploadLabel')">
+    </label>
+    <button class="btn" onclick="creerCompte()">Créer mon compte</button>
+  </div>
+
+  <div class="screen" id="home">
+    <div class="center" style="margin-bottom:6px;">
+      <div class="crest">Chez Toi</div>
+      <div style="font-size:38px;">🏡</div>
+      <h1 id="homeWelcome">Bienvenue chez toi</h1>
+      <p class="sub" id="homeSubtitle">Votre maison est sous surveillance</p>
+    </div>
+    <button class="btn ghost" style="margin-bottom:10px;" onclick="ouvrirLangues()">🌐 <span id="langBtnTxt">Langue</span></button>
+    <button class="btn" id="btnDetection" onclick="simulerDetection()">🔔 Simuler une détection</button>
+    <div class="bigpanel" onclick="go('housemap')">
+      <div style="font-size:44px;">🗺️</div>
+      <div id="locTitle" style="font-weight:700; font-size:17px; margin-top:6px;">Localisation de la maison</div>
+      <div class="sub" style="margin:4px 0 0; font-size:22px;">›</div>
+    </div>
+    <div class="nav-home">
+      <button class="btn dark" onclick="go('car')">🚗  Ma voiture</button>
+      <button class="btn dark" onclick="go('devices')">🔌  Appareils de la maison</button>
+      <button class="btn dark" onclick="go('camconfig')">⚙️  Configurer la caméra</button>
+    </div>
+    <button class="btn ghost" style="margin-top:16px;" onclick="deconnexion()">Se déconnecter</button>
+  </div>
+
+  <div class="screen" id="housemap">
+    <div class="topbar"><span class="back" onclick="go('home')">←</span><h1 style="margin:0;font-size:20px">Ma maison</h1></div>
+    <p class="sub" style="margin-bottom:8px">Où se trouve la maison</p>
+    <div class="map" style="height:220px;"><div class="pin"></div><span class="sub" id="maisonMapLabel" style="margin:0">Non définie</span></div>
+    <a class="btn dark" id="maisonMapLink" href="#" target="_blank" rel="noopener" style="display:none; text-align:center; text-decoration:none; box-sizing:border-box; margin-bottom:8px;">📍 Voir sur Google Maps</a>
+    <p class="sub" id="geoMsg" style="display:none; margin:0 0 8px; color:#ff9b6b;">Active la localisation dans les réglages de ton téléphone pour utiliser cette fonction.</p>
+    <button class="btn" id="btnGeo" style="margin-bottom:8px;" onclick="localiserMaison()">🎯 Utiliser ma position actuelle</button>
+    <div id="maisonAdresseForm" style="display:none; margin-bottom:8px;">
+      <p class="sub" style="margin:0 0 8px;">Où se situe ta maison ?</p>
+      <input id="maisonAdresseInput" placeholder="Adresse complète">
+      <button class="btn dark" onclick="validerAdresseMaison()">Valider l'adresse</button>
+    </div>
+    <p class="sub" style="margin:14px 0 8px;">Plan de la maison et appareils connectés</p>
+    <div class="housePlan">
+      <div class="room" style="left:0; top:0; width:58%; height:52%;">
+        <div class="fp-icon" style="top:14%; left:8%;" onclick="hpToggle(this)">💡</div>
+        <div class="fp-icon" style="top:14%; left:56%;" onclick="hpToggle(this)">📺</div>
+        <div class="fp-icon" style="top:56%; left:8%;" onclick="hpToggle(this)">❄️</div>
+        <span>SALON</span>
+      </div>
+      <div class="room" style="left:58%; top:0; width:42%; height:52%;">
+        <div class="fp-icon" style="top:14%; left:10%;" onclick="hpToggle(this)">💡</div>
+        <div class="fp-icon" style="top:14%; left:55%;" onclick="hpToggle(this)">☕</div>
+        <div class="fp-icon" style="top:56%; left:10%;" onclick="hpToggle(this)">🔌</div>
+        <span>CUISINE</span>
+      </div>
+      <div class="room" style="left:0; top:52%; width:42%; height:48%;">
+        <div class="fp-icon" style="top:14%; left:10%;" onclick="hpToggle(this)">💡</div>
+        <div class="fp-icon" style="top:14%; left:55%;" onclick="hpToggle(this)">❄️</div>
+        <span>CHAMBRE</span>
+      </div>
+      <div class="room" style="left:42%; top:52%; width:28%; height:48%;">
+        <div class="fp-icon" style="top:14%; left:25%;" onclick="hpToggle(this)">🚿</div>
+        <div class="fp-icon" style="top:56%; left:25%;" onclick="hpToggle(this)">💡</div>
+        <span>BAIN</span>
+      </div>
+      <div class="room" style="left:70%; top:52%; width:30%; height:48%;">
+        <div class="fp-icon" style="top:14%; left:25%;" onclick="hpToggle(this)">🔔</div>
+        <div class="fp-icon" style="top:56%; left:25%;" onclick="hpToggle(this)">🔒</div>
+        <span>ENTRÉE</span>
+      </div>
+    </div>
+    <p class="sub" id="hpCount" style="text-align:center; margin:8px 0 12px;">0 appareil allumé</p>
+    <button class="btn dark" onclick="go('devices')">🔌 Voir tous les appareils</button>
+  </div>
+
+  <div class="screen" id="camconfig">
+    <div class="topbar"><span class="back" onclick="go('home')">←</span><h1 style="margin:0;font-size:20px">Config caméra</h1></div>
+    <div class="card">
+      <p class="sub" style="margin-bottom:8px">Fréquence de vérification</p>
+      <div class="center" style="color:var(--gold2); font-size:22px; font-weight:700;" id="freqLabel">Toutes les 3 h</div>
+      <input type="range" min="1" max="24" value="3" style="width:100%; margin-top:10px;" oninput="document.getElementById('freqLabel').textContent='Toutes les '+this.value+' h'">
+    </div>
+    <div class="card row between">
+      <div><b>Mode économie</b><br><span class="sub" style="margin:0">Analyse 2 seulement si besoin</span></div>
+      <div class="switch on" onclick="this.classList.toggle('on')"><div class="knob"></div></div>
+    </div>
+    <div class="card row"><span>①</span>&nbsp; Analyse rapide locale (hors ligne) 📴</div>
+    <div class="card row"><span>②</span>&nbsp; Analyse poussée en ligne si doute 📶</div>
+  </div>
+
+  <div class="screen" id="devices">
+    <div class="topbar"><span class="back" onclick="go('home')">←</span><h1 style="margin:0;font-size:20px">Appareils</h1></div>
+    <p class="sub" style="margin-bottom:8px">Plan de la maison</p>
+    <div class="floorplan">
+      <div class="fp-icon" data-label="Lampe chevet" onclick="fpToggle(this)">💡</div>
+      <div class="fp-icon" style="left:76%;" data-label="Plafonnier" onclick="fpToggle(this)">💡</div>
+      <div class="fp-icon" style="top:62%;" data-label="Climatisation" onclick="fpToggle(this)">❄️</div>
+      <div class="fp-icon" style="top:62%; left:76%;" data-label="Télé" onclick="fpToggle(this)">📺</div>
+      <div class="fp-icon" style="top:35%; left:46%;" data-label="Prise" onclick="fpToggle(this)">🔌</div>
+      <div class="fp-bed"></div>
+    </div>
+    <button class="btn dark" id="scanBtn" onclick="scanNearby()">📡 Rechercher des appareils à proximité</button>
+    <div id="scanResult" style="margin:10px 0; display:none;"></div>
+    <h2 style="margin-top:16px;">Tous les appareils</h2>
+    <div class="grid2" id="deviceGrid"></div>
+  </div>
+
+  <div class="screen" id="car">
+    <div class="topbar"><span class="back" onclick="go('home')">←</span><h1 style="margin:0;font-size:20px">Ma voiture</h1></div>
+    <button class="btn dark" id="carBtBtn" onclick="connecterBluetooth()">🔵 Connecter la voiture en Bluetooth</button>
+    <p class="sub" id="carBtMsg" style="display:none; margin:0 0 10px; color:#ff9b6b;"></p>
+    <div id="carDetails" style="display:none;">
+      <div class="card">
+        <div class="row" style="margin-bottom:10px;"><span style="font-size:24px">🚗</span><b id="carNom">-</b></div>
+        <div class="row between" style="margin-bottom:8px;"><span class="sub" style="margin:0">Kilométrage</span><b id="carKm">-</b></div>
+        <div class="row between" style="margin-bottom:8px;"><span class="sub" style="margin:0">Année</span><b id="carAnnee">-</b></div>
+        <div class="row between" style="margin-bottom:8px;"><span class="sub" style="margin:0">Couleur</span><b id="carCouleur">-</b></div>
+        <div class="row between" style="margin-bottom:8px;"><span class="sub" style="margin:0">Plaque</span><b id="carPlaque">-</b></div>
+      <button class="btn ghost" style="margin-bottom:8px;" onclick="demanderDetailsVoiture(document.getElementById('carNom').textContent)">✏️ Modifier les infos de la voiture</button>
+        <div class="row between" style="margin-bottom:8px;"><span class="sub" style="margin:0">Contrôle technique</span><b>Non renseigné</b></div>
+        <div class="row between" style="margin-bottom:8px;"><span class="sub" style="margin:0">Pression pneus</span><b>Non renseigné</b></div>
+        <div class="row between" style="margin-bottom:8px;"><span class="sub" style="margin:0">Carburant</span><b id="carCarburant">-</b></div>
+      </div>
+      <p class="sub" style="margin-bottom:8px">Localisation de la voiture</p>
+      <div class="map"><div class="pin"></div><span class="sub" id="carMapLabel" style="margin:0">Position non définie</span></div>
+      <p class="sub" id="carGeoMsg" style="display:none; margin:0 0 8px; color:#ff9b6b;">Active la localisation dans les réglages de ton téléphone pour localiser la voiture.</p>
+      <a class="btn dark" id="carMapLink" href="#" target="_blank" rel="noopener" style="display:none; text-align:center; text-decoration:none; box-sizing:border-box; margin-bottom:8px;">📍 Voir sur Google Maps</a>
+      <button class="btn" style="margin-bottom:14px;" onclick="localiserVoiture()">🎯 Actualiser la position de la voiture</button>
+      <div class="card row between"><span>🔓 Portes verrouillées</span><div class="switch" onclick="tSwitch(this,'🔓 Portes ouvertes','🔓 Portes verrouillées')"><div class="knob"></div></div></div>
+      <div class="card row between"><span>🧳 Coffre fermé</span><div class="switch" onclick="tSwitch(this,'🧳 Coffre ouvert','🧳 Coffre fermé')"><div class="knob"></div></div></div>
+      <div class="card row between"><span>❄️ Climatisation éteinte</span><div class="switch" onclick="tSwitch(this,'❄️ Climatisation activée','❄️ Climatisation éteinte')"><div class="knob"></div></div></div>
+      <div class="card row between"><span>📍 GPS désactivé</span><div class="switch" onclick="tSwitch(this,'📍 GPS activé','📍 GPS désactivé')"><div class="knob"></div></div></div>
+      <div class="card row between"><span>💡 Phares éteints</span><div class="switch" onclick="tSwitch(this,'💡 Phares allumés','💡 Phares éteints')"><div class="knob"></div></div></div>
+    </div>
+  </div>
+
+  <div id="policeCallScreen">
+    <div class="pc-top">
+      <p class="sub" style="margin:0 0 6px; color:var(--text3);">Appel</p>
+      <div class="pc-avatar">👮</div>
+      <h2 style="margin:14px 0 4px;">Police secours</h2>
+      <p class="sub" style="margin:0 0 4px;">17</p>
+      <p class="sub" id="pcStatus" style="margin:0;">Appel en cours...</p>
+    </div>
+    <div class="pc-bottom">
+      <button class="pc-hangup" onclick="raccrocherAppelPolice()">📞</button>
+      <p class="sub" style="text-align:center; margin-top:10px;">Raccrocher</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="overlay" id="detectOverlay">
+  <div class="sheet" id="detectSheet"></div>
+</div>
+
+<div class="overlay" id="carBtOverlay">
+  <div class="sheet" id="carBtSheet"></div>
+</div>
+
+<div class="overlay" id="langOverlay">
+  <div class="sheet" id="langSheet"></div>
+</div>
+
+<script>
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+setTimeout(function(){ if(sessionActive()){ connexionAuto(); } else { go('login'); } }, 3800);
+
+function fermerDetectOverlay(){
+  document.getElementById('detectOverlay').classList.remove('show');
+}
+function simulerDetection(){
+  const sheet = document.getElementById('detectSheet');
+  sheet.innerHTML = `
+    <p class="sub" style="margin:0 0 14px;">Présence détectée chez toi. Est-ce normal ?</p>
+    <button class="btn" onclick="detectionReponse(true)">Oui, tout va bien</button>
+    <button class="btn-gold" onclick="appelerPolice()">
+  🚨 NON, ALERTER (APPELER LE 17)
+</button>
+    <p class="sub" style="margin:10px 0 0; font-size:12px;">Ce bouton compose le 17 (police secours). L'appel doit être lancé par toi-même, ton téléphone te demandera de confirmer avant d'appeler.</p>
+  `;
+  document.getElementById('detectOverlay').classList.add('show');
+}
+function appelerPolice(){
+  const sheet = document.getElementById('detectSheet');
+  sheet.innerHTML = `
+    <p class="sub" style="margin:0 0 14px;">🚨 Appel d'urgence<br>Veux-tu contacter la police secours (17) ?</p>
+    <a class="btn-gold" href="tel:17" rel="noopener" style="display:flex; text-align:center; text-decoration:none; box-sizing:border-box;">📞 Appeler le 17</a>
+    <button class="btn ghost" onclick="fermerDetectOverlay()">Annuler</button>
+  `;
+  document.getElementById('detectOverlay').classList.add('show');
+}
+function detectionReponse(normal){
+  const sheet = document.getElementById('detectSheet');
+  sheet.innerHTML = '<p class="sub" style="margin:0;">Alerte fermée.</p><button class="btn dark" onclick="fermerDetectOverlay()">OK</button>';
+}
+let pcTimerId = null;
+function lancerAppelPolice(){
+  const statusEl = document.getElementById('pcStatus');
+  statusEl.textContent = 'Appel en cours...';
+  document.getElementById('policeCallScreen').classList.add('show');
+  let secondes = 0;
+  clearInterval(pcTimerId);
+  pcTimerId = setInterval(function(){
+    secondes++;
+    const m = String(Math.floor(secondes/60)).padStart(2,'0');
+    const s = String(secondes%60).padStart(2,'0');
+    statusEl.textContent = m+':'+s;
+  }, 1000);
+}
+function raccrocherAppelPolice(){
+  clearInterval(pcTimerId);
+  document.getElementById('policeCallScreen').classList.remove('show');
+}
+let nomUtilisateur = '';
+let compte = null;
+function hashMdp(m){
+  if(window.crypto && crypto.subtle && window.TextEncoder){
+    return crypto.subtle.digest('SHA-256', new TextEncoder().encode('chez-toi:' + m)).then(function(buf){
+      return Array.from(new Uint8Array(buf)).map(function(x){ return x.toString(16).padStart(2,'0'); }).join('');
+    });
+  }
+  let h = 5381;
+  for(let i = 0; i < m.length; i++){ h = ((h << 5) + h) + m.charCodeAt(i); h |= 0; }
+  return Promise.resolve('d' + h);
+}
+function chargerCompte(){
+  if(!compte){
+    try{ const raw = localStorage.getItem('compteChezToi'); if(raw){ compte = JSON.parse(raw); } }catch(e){}
+  }
+  return compte;
+}
+function sessionActive(){
+  try{ return localStorage.getItem('sessionChezToi') === '1'; }catch(e){ return false; }
+}
+function ouvrirSession(){
+  try{ localStorage.setItem('sessionChezToi', '1'); }catch(e){}
+}
+function connexionAuto(){
+  const c = chargerCompte();
+  if(!c){ go('login'); return; }
+  nomUtilisateur = c.prenom || '';
+  document.getElementById('homeWelcome').textContent = c.prenom ? ('Te revoilà, ' + c.prenom + ' !') : 'Bienvenue chez toi';
+  go('home');
+}
+function deconnexion(){
+  try{ localStorage.removeItem('sessionChezToi'); }catch(e){}
+  go('login');
+}
+function marquerErreur(input, err, texte){
+  err.textContent = texte;
+  err.classList.add('show');
+  input.classList.add('error');
+}
+function effacerErreur(input, err){
+  err.classList.remove('show');
+  input.classList.remove('error');
+}
+function verifierEtEntrer(mdp, input, err){
+  const c = chargerCompte();
+  if(!c){
+    marquerErreur(input, err, "Aucun compte trouvé sur cet appareil. Crée d'abord un compte.");
+    return;
+  }
+  hashMdp(mdp).then(function(h){
+    if(h !== c.hash){
+      marquerErreur(input, err, 'Mot de passe incorrect');
+      return;
+    }
+    effacerErreur(input, err);
+    nomUtilisateur = c.prenom || '';
+    document.getElementById('homeWelcome').textContent = c.prenom ? ('Te revoilà, ' + c.prenom + ' !') : 'Bienvenue chez toi';
+    ouvrirSession();
+    go('home');
+  });
+}
+function reconnexionAncien(){
+  const id = document.getElementById('reconnectId');
+  const pass = document.getElementById('reconnectPass');
+  const idErr = document.getElementById('reconnectIdErr');
+  const passErr = document.getElementById('reconnectPassErr');
+  let ok = true;
+  if(!id.value.trim()){ marquerErreur(id, idErr, 'Champ obligatoire'); ok = false; } else { effacerErreur(id, idErr); }
+  if(!pass.value){ marquerErreur(pass, passErr, 'Champ obligatoire'); ok = false; } else { effacerErreur(pass, passErr); }
+  if(ok){ verifierEtEntrer(pass.value, pass, passErr); }
+}
+function connexion(){
+  const email = document.getElementById('loginEmail');
+  const pass = document.getElementById('loginPassword');
+  const emailErr = document.getElementById('loginEmailErr');
+  const passErr = document.getElementById('loginPasswordErr');
+  let ok = true;
+  if(!email.value.trim()){ marquerErreur(email, emailErr, 'Champ obligatoire'); ok = false; } else { effacerErreur(email, emailErr); }
+  if(!pass.value){ marquerErreur(pass, passErr, 'Champ obligatoire'); ok = false; } else { effacerErreur(pass, passErr); }
+  if(ok){ verifierEtEntrer(pass.value, pass, passErr); }
+}
+let carViaBt = false;
+function connecterBluetooth(){
+  const btn = document.getElementById('carBtBtn');
+  const msg = document.getElementById('carBtMsg');
+  msg.style.display = 'none';
+  if(!navigator.bluetooth){
+    msg.textContent = "Le Bluetooth n'est pas disponible dans ce navigateur (ouvre l'appli avec Chrome sur Android). Tu peux renseigner ta voiture à la main.";
+    msg.style.display = 'block';
+    afficherFormulaireManuel();
+    document.getElementById('carBtOverlay').classList.add('show');
+    return;
+  }
+  btn.textContent = '🔵 Recherche en cours...';
+  navigator.bluetooth.requestDevice({acceptAllDevices:true}).then(function(device){
+    choisirVoiture(device.name || 'Ma voiture', true);
+  }).catch(function(err){
+    btn.textContent = '🔵 Connecter la voiture en Bluetooth';
+    msg.textContent = (err && err.name === 'NotFoundError')
+      ? "Aucun appareil sélectionné. Monte dans la voiture, active son Bluetooth et réessaie."
+      : "Impossible d'accéder au Bluetooth. Active le Bluetooth et la localisation de ton téléphone, puis autorise l'accès.";
+    msg.style.display = 'block';
+  });
+}
+function afficherDetailsVoiture(){
+  document.getElementById('carDetails').style.display = 'block';
+}
+function choisirVoiture(nom, bt){
+  carViaBt = !!bt;
+  document.getElementById('carNom').textContent = nom;
+  document.getElementById('carBtBtn').textContent = '✅ ' + nom + (bt ? ' — liée au téléphone' : ' — ajoutée');
+  document.getElementById('carBtOverlay').classList.remove('show');
+  ['carKm','carAnnee','carCouleur','carCarburant','carPlaque'].forEach(function(id){
+    document.getElementById(id).textContent = 'Non renseigné';
+  });
+  afficherDetailsVoiture();
+  if(bt){ localiserVoiture(); }
+}
+function demanderDetailsVoiture(nom){
+  const sheet = document.getElementById('carBtSheet');
+  sheet.innerHTML = `
+    <p class="sub" id="carFormTitle" style="margin:0 0 14px;"></p>
+    <input id="carKmInput" placeholder="Kilométrage (ex: 52000)" style="margin-bottom:10px;">
+    <input id="carAnneeInput" placeholder="Année" style="margin-bottom:10px;">
+    <input id="carCouleurInput" placeholder="Couleur" style="margin-bottom:10px;">
+    <input id="carCarburantInput" placeholder="Carburant" style="margin-bottom:10px;">
+    <input id="carPlaqueInput" placeholder="Plaque d'immatriculation" style="margin-bottom:14px;">
+    <button class="btn dark" onclick="validerDetailsVoiture()">Valider</button>
+  `;
+  document.getElementById('carFormTitle').textContent = 'Renseigne les vraies infos de : ' + nom;
+  document.getElementById('carBtOverlay').classList.add('show');
+}
+function validerDetailsVoiture(){
+  document.getElementById('carKm').textContent = (document.getElementById('carKmInput').value.trim() || 'Non renseigné');
+  document.getElementById('carAnnee').textContent = (document.getElementById('carAnneeInput').value.trim() || 'Non renseigné');
+  document.getElementById('carCouleur').textContent = (document.getElementById('carCouleurInput').value.trim() || 'Non renseigné');
+  document.getElementById('carCarburant').textContent = (document.getElementById('carCarburantInput').value.trim() || 'Non renseigné');
+  document.getElementById('carPlaque').textContent = (document.getElementById('carPlaqueInput').value.trim() || 'Non renseigné');
+  document.getElementById('carBtOverlay').classList.remove('show');
+  afficherDetailsVoiture();
+  if(carViaBt){ localiserVoiture(); }
+}
+function localiserVoiture(){
+  const msg = document.getElementById('carGeoMsg');
+  msg.style.display = 'none';
+  if(!navigator.geolocation){ msg.style.display = 'block'; return; }
+  navigator.geolocation.getCurrentPosition(function(pos){
+    const lat = pos.coords.latitude, lng = pos.coords.longitude;
+    const link = document.getElementById('carMapLink');
+    link.href = 'https://www.google.com/maps/search/?api=1&query=' + lat + ',' + lng;
+    link.style.display = 'block';
+    document.getElementById('carMapLabel').textContent = 'Voiture : ' + lat.toFixed(5) + ', ' + lng.toFixed(5);
+  }, function(){ msg.style.display = 'block'; });
+}
+function afficherFormulaireManuel(){
+  const sheet = document.getElementById('carBtSheet');
+  sheet.innerHTML = `
+    <p class="sub" style="margin:0 0 14px;">Renseigne les informations de ta voiture :</p>
+    <input id="manuMarque" placeholder="Marque (ex: Peugeot)" style="margin-bottom:10px;">
+    <input id="manuModele" placeholder="Modèle (ex: 208)" style="margin-bottom:10px;">
+    <button class="btn dark" onclick="validerVoitureManuelle()">Valider</button>
+  `;
+}
+function validerVoitureManuelle(){
+  const marque = document.getElementById('manuMarque').value.trim();
+  const modele = document.getElementById('manuModele').value.trim();
+  const nom = (marque || modele) ? (marque+' '+modele).trim() : 'Ma voiture';
+  choisirVoiture(nom, false);
+}
+function localiserMaison(){
+  document.getElementById('geoMsg').style.display='none';
+  if(!navigator.geolocation){
+    document.getElementById('geoMsg').style.display='block';
+    document.getElementById('maisonAdresseForm').style.display='block';
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(function(pos){
+    const lat = pos.coords.latitude, lng = pos.coords.longitude;
+    const link = document.getElementById('maisonMapLink');
+    link.href = 'https://www.google.com/maps/search/?api=1&query='+lat+','+lng;
+    link.style.display = 'block';
+    document.getElementById('maisonMapLabel').textContent = 'Ma maison : ' + lat.toFixed(5) + ', ' + lng.toFixed(5);
+    document.getElementById('maisonAdresseForm').style.display='none';
+  }, function(err){
+    document.getElementById('geoMsg').style.display='block';
+    document.getElementById('maisonAdresseForm').style.display='block';
+  });
+}
+function validerAdresseMaison(){
+  const adresse = document.getElementById('maisonAdresseInput').value.trim();
+  if(!adresse) return;
+  const link = document.getElementById('maisonMapLink');
+  link.href = 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(adresse);
+  link.style.display = 'block';
+  document.getElementById('maisonMapLabel').textContent = adresse;
+  document.getElementById('maisonAdresseForm').style.display='none';
+}
+const traductions = {
+  fr:{nom:'Français', welcome:'Bienvenue chez toi', subtitle:'Votre maison est sous surveillance', detection:'🔔 Simuler une détection', locTitle:'Localisation de la maison', maps:'📍 Voir sur Google Maps', geo:'🎯 Utiliser ma position actuelle', lang:'Langue', loginTitle:'Connexion', loginSubtitle:'Votre maison, entre de bonnes mains', connectBtn:'Se connecter', orText:'ou', continueBtn:'Continuer avec ce numéro', noAccount:'Pas encore de compte ? Créer un compte', reconnect:'Se reconnecter à un ancien compte'},
+  en:{nom:'English', welcome:'Welcome home', subtitle:'Your home is being monitored', detection:'🔔 Simulate a detection', locTitle:'Home location', maps:'📍 View on Google Maps', geo:'🎯 Use my current location', lang:'Language', loginTitle:'Login', loginSubtitle:'Your home, in good hands', connectBtn:'Log in', orText:'or', continueBtn:'Continue with this number', noAccount:'No account yet? Create one', reconnect:'Sign back into an old account'},
+  es:{nom:'Español', welcome:'Bienvenido a casa', subtitle:'Tu casa está bajo vigilancia', detection:'🔔 Simular una detección', locTitle:'Ubicación de la casa', maps:'📍 Ver en Google Maps', geo:'🎯 Usar mi ubicación actual', lang:'Idioma', loginTitle:'Inicio de sesión', loginSubtitle:'Tu casa, en buenas manos', connectBtn:'Iniciar sesión', orText:'o', continueBtn:'Continuar con este número', noAccount:'¿Sin cuenta? Crear una', reconnect:'Volver a conectar una cuenta antigua'},
+  de:{nom:'Deutsch', welcome:'Willkommen zu Hause', subtitle:'Ihr Zuhause wird überwacht', detection:'🔔 Erkennung simulieren', locTitle:'Standort des Hauses', maps:'📍 Auf Google Maps ansehen', geo:'🎯 Meinen Standort verwenden', lang:'Sprache', loginTitle:'Anmeldung', loginSubtitle:'Ihr Zuhause in guten Händen', connectBtn:'Anmelden', orText:'oder', continueBtn:'Mit dieser Nummer fortfahren', noAccount:'Noch kein Konto? Erstellen', reconnect:'Bei altem Konto anmelden'},
+  it:{nom:'Italiano', welcome:'Bentornato a casa', subtitle:'La tua casa è sorvegliata', detection:'🔔 Simula un rilevamento', locTitle:'Posizione della casa', maps:'📍 Vedi su Google Maps', geo:'🎯 Usa la mia posizione', lang:'Lingua', loginTitle:'Accesso', loginSubtitle:'La tua casa, in buone mani', connectBtn:'Accedi', orText:'o', continueBtn:'Continua con questo numero', noAccount:'Non hai un account? Creane uno', reconnect:'Riconnettiti a un vecchio account'},
+  pt:{nom:'Português', welcome:'Bem-vindo a casa', subtitle:'Sua casa está sob vigilância', detection:'🔔 Simular uma deteção', locTitle:'Localização da casa', maps:'📍 Ver no Google Maps', geo:'🎯 Usar minha localização', lang:'Idioma', loginTitle:'Login', loginSubtitle:'Sua casa, em boas mãos', connectBtn:'Entrar', orText:'ou', continueBtn:'Continuar com este número', noAccount:'Sem conta? Criar uma', reconnect:'Reconectar a uma conta antiga'},
+  ar:{nom:'العربية', welcome:'مرحبًا بعودتك', subtitle:'منزلك تحت المراقبة', detection:'🔔 محاكاة اكتشاف', locTitle:'موقع المنزل', maps:'📍 عرض على خرائط جوجل', geo:'🎯 استخدام موقعي الحالي', lang:'اللغة', loginTitle:'تسجيل الدخول', loginSubtitle:'منزلك بين أيدٍ أمينة', connectBtn:'تسجيل الدخول', orText:'أو', continueBtn:'المتابعة بهذا الرقم', noAccount:'ليس لديك حساب؟ أنشئ واحدًا', reconnect:'إعادة الاتصال بحساب قديم'},
+  zh:{nom:'中文', welcome:'欢迎回家', subtitle:'您的房屋正在监控中', detection:'🔔 模拟检测', locTitle:'房屋位置', maps:'📍 在谷歌地图上查看', geo:'🎯 使用我的当前位置', lang:'语言', loginTitle:'登录', loginSubtitle:'您的家，在可靠的守护中', connectBtn:'登录', orText:'或', continueBtn:'使用此号码继续', noAccount:'还没有账户？创建一个', reconnect:'重新登录旧账户'},
+  ja:{nom:'日本語', welcome:'おかえりなさい', subtitle:'ご自宅は監視中です', detection:'🔔 検知をシミュレート', locTitle:'自宅の位置', maps:'📍 Googleマップで見る', geo:'🎯 現在地を使用', lang:'言語', loginTitle:'ログイン', loginSubtitle:'あなたの家を安心に', connectBtn:'ログイン', orText:'または', continueBtn:'この番号で続ける', noAccount:'アカウントがない場合は作成', reconnect:'古いアカウントに再接続'},
+  ru:{nom:'Русский', welcome:'С возвращением домой', subtitle:'Ваш дом под наблюдением', detection:'🔔 Симулировать обнаружение', locTitle:'Расположение дома', maps:'📍 Посмотреть на Google Картах', geo:'🎯 Использовать моё местоположение', lang:'Язык', loginTitle:'Вход', loginSubtitle:'Ваш дом в надёжных руках', connectBtn:'Войти', orText:'или', continueBtn:'Продолжить с этим номером', noAccount:'Нет аккаунта? Создать', reconnect:'Войти в старый аккаунт'},
+  hi:{nom:'हिन्दी', welcome:'वापसी पर स्वागत है', subtitle:'आपका घर निगरानी में है', detection:'🔔 पहचान का अनुकरण करें', locTitle:'घर का स्थान', maps:'📍 Google मैप्स पर देखें', geo:'🎯 मेरा वर्तमान स्थान उपयोग करें', lang:'भाषा', loginTitle:'लॉगिन', loginSubtitle:'आपका घर, सुरक्षित हाथों में', connectBtn:'लॉगिन करें', orText:'या', continueBtn:'इस नंबर से जारी रखें', noAccount:'खाता नहीं है? बनाएं', reconnect:'पुराने खाते से फिर जुड़ें'},
+  tr:{nom:'Türkçe', welcome:'Tekrar hoş geldin', subtitle:'Eviniz gözetim altında', detection:'🔔 Tespiti simüle et', locTitle:'Evin konumu', maps:'📍 Google Haritalar\'da gör', geo:'🎯 Konumumu kullan', lang:'Dil', loginTitle:'Giriş', loginSubtitle:'Eviniz güvenilir ellerde', connectBtn:'Giriş yap', orText:'veya', continueBtn:'Bu numarayla devam et', noAccount:'Hesabın yok mu? Oluştur', reconnect:'Eski bir hesaba yeniden bağlan'}
+};
+function ouvrirLangues(){
+  const sheet = document.getElementById('langSheet');
+  let html = '<p class="sub" style="margin:0 0 14px;">Choisis une langue :</p>';
+  Object.keys(traductions).forEach(function(code){
+    html += '<button class="btn" style="margin-bottom:8px;" onclick="appliquerLangue(\''+code+'\')">'+traductions[code].nom+'</button>';
+  });
+  html += '<button class="btn ghost" onclick="document.getElementById(\'langOverlay\').classList.remove(\'show\')">✕</button>';
+  sheet.innerHTML = html;
+  document.getElementById('langOverlay').classList.add('show');
+}
+function appliquerLangue(code){
+  const t = traductions[code];
+  document.getElementById('homeSubtitle').textContent = t.subtitle;
+  document.getElementById('btnDetection').textContent = t.detection;
+  document.getElementById('locTitle').textContent = t.locTitle;
+  document.getElementById('btnGeo').textContent = t.geo;
+  document.getElementById('langBtnTxt').textContent = t.lang;
+  document.getElementById('langBtnTxt2').textContent = t.lang;
+  document.getElementById('loginTitle').textContent = t.loginTitle;
+  document.getElementById('loginSubtitle').textContent = t.loginSubtitle;
+  document.getElementById('connectBtn').textContent = t.connectBtn;
+  document.getElementById('orText').textContent = t.orText;
+  document.getElementById('continueBtn').textContent = t.continueBtn;
+  document.getElementById('reconnectLine').textContent = t.reconnect;
+  if(!nomUtilisateur){ document.getElementById('homeWelcome').textContent = t.welcome; }
+  document.getElementById('langOverlay').classList.remove('show');
+}
+function continuerNumero(){
+  const phone = document.getElementById('loginPhone');
+  const phoneErr = document.getElementById('loginPhoneErr');
+  if(!phone.value.trim()){
+    phoneErr.classList.add('show'); phone.classList.add('error');
+    return;
+  }
+  phoneErr.classList.remove('show'); phone.classList.remove('error');
+  go('home');
+}
+function creerCompte(){
+  const prenom = document.getElementById('signupPrenom').value.trim();
+  const nom = document.getElementById('signupNom').value.trim();
+  const tel = document.getElementById('signupTel');
+  const telErr = document.getElementById('signupTelErr');
+  const p1 = document.getElementById('signupPass');
+  const p2 = document.getElementById('signupPass2');
+  const p1Err = document.getElementById('signupPassErr');
+  const p2Err = document.getElementById('signupPass2Err');
+  let ok = true;
+  if(!tel.value.trim()){ marquerErreur(tel, telErr, 'Champ obligatoire'); ok = false; } else { effacerErreur(tel, telErr); }
+  if(!p1.value){ marquerErreur(p1, p1Err, 'Champ obligatoire'); ok = false; } else { effacerErreur(p1, p1Err); }
+  if(p1.value && p2.value !== p1.value){ marquerErreur(p2, p2Err, 'Les mots de passe ne correspondent pas'); ok = false; } else { effacerErreur(p2, p2Err); }
+  if(!ok) return;
+  const nomAffiche = prenom || nom;
+  hashMdp(p1.value).then(function(h){
+    compte = {hash:h, prenom:nomAffiche};
+    try{ localStorage.setItem('compteChezToi', JSON.stringify(compte)); }catch(e){}
+    nomUtilisateur = nomAffiche;
+    document.getElementById('homeWelcome').textContent = nomAffiche ? ('Bienvenue chez toi, ' + nomAffiche + ' !') : 'Bienvenue chez toi';
+    ouvrirSession();
+    go('home');
+  });
+}
+function tSwitch(el, onTxt, offTxt){
+  el.classList.toggle('on');
+  el.parentElement.querySelector('span').textContent = el.classList.contains('on') ? onTxt : offTxt;
+}
+function previewPhoto(evt, labelId){
+  const file = evt.target.files[0];
+  if(!file) return;
+  const url = URL.createObjectURL(file);
+  const label = document.getElementById(labelId);
+  label.innerHTML = '<img src="'+url+'">';
+  label.appendChild(evt.target);
+}
+
+function hpToggle(el){
+  el.classList.toggle('on');
+  const n = document.querySelectorAll('#housemap .fp-icon.on').length;
+  document.getElementById('hpCount').textContent = n + (n > 1 ? ' appareils allumés' : ' appareil allumé');
+}
+function fpToggle(el){
+  el.classList.toggle('on');
+}
+const appareils = [
+  {n:'Télé', e:'📺'}, {n:'Ordinateur', e:'💻'}, {n:'Fenêtre', e:'🪟'},
+  {n:'Machine à café', e:'☕'}, {n:'Douche', e:'🚿'}, {n:'Toit ouvrant', e:'🏠'},
+  {n:'Climatisation', e:'❄️'}, {n:'Lumière', e:'💡'}, {n:"Porte d'entrée", e:'🚪'},
+  {n:'Garage', e:'🚙'}, {n:'Frigo', e:'🧊'}, {n:'Four', e:'🍞'},
+  {n:'Micro-ondes', e:'📦'}, {n:'Lave-linge', e:'🫧'}, {n:'Sèche-linge', e:'🌀'},
+  {n:'Lave-vaisselle', e:'🍽️'}, {n:'Aspirateur robot', e:'🤖'}, {n:'Chauffe-eau', e:'🔥'},
+  {n:'Chauffage', e:'🌡️'}, {n:'Volets roulants', e:'🪟'}, {n:'Alarme', e:'🚨'},
+  {n:'Sonnette connectée', e:'🔔'}, {n:'Prise connectée', e:'🔌'}, {n:'Enceinte connectée', e:'🔊'},
+  {n:'Thermostat', e:'🎛️'}, {n:'Portail', e:'🚧'}, {n:'Arrosage jardin', e:'🌱'},
+  {n:'Box internet', e:'📶'}, {n:'Chargeur voiture élec.', e:'⚡'}
+];
+const grid = document.getElementById('deviceGrid');
+appareils.forEach(function(a){
+  const d = document.createElement('div');
+  d.className='device';
+  d.innerHTML = '<div class="emoji">'+a.e+'</div><div class="name">'+a.n+'</div><div class="state">Éteint</div>';
+  d.onclick = function(){
+    d.classList.toggle('on');
+    d.querySelector('.state').textContent = d.classList.contains('on') ? 'Allumé' : 'Éteint';
+  };
+  grid.appendChild(d);
+});
+
+function scanNearby(){
+  const btn = document.getElementById('scanBtn');
+  const res = document.getElementById('scanResult');
+  res.style.display='block';
+  function message(txt){
+    res.innerHTML = '';
+    const c = document.createElement('div');
+    c.className = 'card';
+    c.textContent = txt;
+    res.appendChild(c);
+  }
+  if(!navigator.bluetooth){
+    message("Le Bluetooth n'est pas disponible dans ce navigateur. Ouvre l'appli avec Chrome sur Android et active le Bluetooth de ton téléphone.");
+    return;
+  }
+  btn.textContent = '📡 Recherche en cours...';
+  navigator.bluetooth.requestDevice({acceptAllDevices:true}).then(function(device){
+    btn.textContent = '📡 Rechercher des appareils à proximité';
+    const nom = device.name || 'Appareil Bluetooth';
+    res.innerHTML = '';
+    const card = document.createElement('div');
+    card.className = 'card row between';
+    const label = document.createElement('span');
+    label.textContent = '🔵 ' + nom + ' — lié au téléphone';
+    const add = document.createElement('button');
+    add.className = 'btn';
+    add.style.cssText = 'margin:0; width:auto; padding:8px 14px; font-size:12px;';
+    add.textContent = 'Ajouter';
+    add.onclick = function(){ ajouterAppareil(nom, '🔵', add); };
+    card.appendChild(label);
+    card.appendChild(add);
+    res.appendChild(card);
+  }).catch(function(err){
+    btn.textContent = '📡 Rechercher des appareils à proximité';
+    if(err && err.name === 'NotFoundError'){
+      message("Aucun appareil sélectionné.");
+    } else {
+      message("Impossible d'accéder au Bluetooth. Active le Bluetooth et la localisation de ton téléphone, puis autorise l'accès.");
+    }
+  });
+}
+function ajouterAppareil(nom, emoji, btn){
+  const d = document.createElement('div');
+  d.className='device on';
+  d.innerHTML = '<div class="emoji"></div><div class="name"></div><div class="state">Allumé</div>';
+  d.querySelector('.emoji').textContent = emoji;
+  d.querySelector('.name').textContent = nom;
+  d.onclick = function(){ d.classList.toggle('on'); d.querySelector('.state').textContent = d.classList.contains('on') ? 'Allumé' : 'Éteint'; };
+  grid.appendChild(d);
+  btn.closest('.card').remove();
+}
+</script>
+</body>
+</html>
